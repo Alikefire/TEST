@@ -1,0 +1,41 @@
+# 基本模型和数据路径
+model_name_or_path: EleutherAI/pythia-70m-deduped  # 替换为您的基础模型路径 (例如 LLaMA, GPT-2等)
+cache_dir: "./cache" # HuggingFace cache 目录
+data_path: "./data/your_train_data.json" # 替换为您的训练数据路径
+output_dir: "./s2l_outputs" # 输出目录，图片会保存在这里
+full_data_path: TIGER-Lab/MathInstruct
+
+# S2L 特定参数
+ref_model_path: /home/xiexin/xx_help/S2L/res/full_mathinstruct_pythia-70m-deduped_3epochs_512_checkpoints/output # 包含多个checkpoint loss的参考模型路径
+num_loss_ckpts: -1 # 使用所有找到的loss checkpoints (-1 表示全部)
+n_components: 10    # K-means 的簇数量 (S2L类中使用)
+init_label_num: 50 # 初始标注数量 (S2L类中使用)
+schedule_name: s2l
+data_path_root: /home/xiexin/xx_help/S2L/res/full_mathinstruct_pythia-70m-deduped_3epochs_512_checkpoints/data
+output_dir_root: ./s2l_outputs
+
+# Tokenizer 和模型参数
+model_max_length: 512
+train_args:
+  optim: adamw_torch
+  num_train_epochs: 3
+  per_device_train_batch_size: 4
+  per_device_eval_batch_size: 4
+  gradient_accumulation_steps: 8
+  eval_strategy: "no"
+  save_strategy: "steps"
+  save_steps: 500
+  save_total_limit: 12
+  learning_rate: 2.0e-5
+  weight_decay: 0.
+  warmup_ratio: 0.03
+  lr_scheduler_type: cosine
+  logging_steps: 1
+  fsdp: "full_shard auto_wrap" 
+  fsdp_config: 
+    transformer_layer_cls_to_wrap: "GPTNeoXLayer"
+  bf16: TRUE
+  tf32: TRUE
+  group_by_length: TRUE
+  full_determinism: TRUE
+  seed: 42

@@ -1,0 +1,64 @@
+usage: train.py [-h] --config_file CONFIG_FILE --wandb_key WANDB_KEY
+train.py: error: argument --wandb_key: expected one argument
+E0530 15:07:33.528000 1393940 site-packages/torch/distributed/elastic/multiprocessing/api.py:869] failed (exitcode: 2) local_rank: 0 (pid: 1394096) of binary: /home/xiexin/anaconda3/envs/factory/bin/python3.10
+Traceback (most recent call last):
+  File "/home/xiexin/anaconda3/envs/factory/bin/torchrun", line 8, in <module>
+    sys.exit(main())
+  File "/home/xiexin/anaconda3/envs/factory/lib/python3.10/site-packages/torch/distributed/elastic/multiprocessing/errors/__init__.py", line 355, in wrapper
+    return f(*args, **kwargs)
+  File "/home/xiexin/anaconda3/envs/factory/lib/python3.10/site-packages/torch/distributed/run.py", line 918, in main
+    run(args)
+  File "/home/xiexin/anaconda3/envs/factory/lib/python3.10/site-packages/torch/distributed/run.py", line 909, in run
+    elastic_launch(
+  File "/home/xiexin/anaconda3/envs/factory/lib/python3.10/site-packages/torch/distributed/launcher/api.py", line 138, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+  File "/home/xiexin/anaconda3/envs/factory/lib/python3.10/site-packages/torch/distributed/launcher/api.py", line 269, in launch_agent
+    raise ChildFailedError(
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
+============================================================
+train.py FAILED
+------------------------------------------------------------
+Failures:
+  <NO_OTHER_FAILURES>
+------------------------------------------------------------
+Root Cause (first observed failure):
+[0]:
+  time      : 2025-05-30_15:07:33
+  host      : hello-ASR4110G-D04R-G2
+  rank      : 0 (local_rank: 0)
+  exitcode  : 2 (pid: 1394096)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+============================================================
+usage: train.py [-h] --config_file CONFIG_FILE --wandb_key WANDB_KEY
+train.py: error: argument --wandb_key: expected one argument
+E0530 15:09:01.655000 1395313 site-packages/torch/distributed/elastic/multiprocessing/api.py:869] failed (exitcode: 2) local_rank: 0 (pid: 1395487) of binary: /home/xiexin/anaconda3/envs/factory/bin/python3.10
+Traceback (most recent call last):
+  File "/home/xiexin/anaconda3/envs/factory/bin/torchrun", line 8, in <module>
+    sys.exit(main())
+  File "/home/xiexin/anaconda3/envs/factory/lib/python3.10/site-packages/torch/distributed/elastic/multiprocessing/errors/__init__.py", line 355, in wrapper
+    return f(*args, **kwargs)
+  File "/home/xiexin/anaconda3/envs/factory/lib/python3.10/site-packages/torch/distributed/run.py", line 918, in main
+    run(args)
+  File "/home/xiexin/anaconda3/envs/factory/lib/python3.10/site-packages/torch/distributed/run.py", line 909, in run
+    elastic_launch(
+  File "/home/xiexin/anaconda3/envs/factory/lib/python3.10/site-packages/torch/distributed/launcher/api.py", line 138, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+  File "/home/xiexin/anaconda3/envs/factory/lib/python3.10/site-packages/torch/distributed/launcher/api.py", line 269, in launch_agent
+    raise ChildFailedError(
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
+============================================================
+train.py FAILED
+------------------------------------------------------------
+Failures:
+  <NO_OTHER_FAILURES>
+------------------------------------------------------------
+Root Cause (first observed failure):
+[0]:
+  time      : 2025-05-30_15:09:01
+  host      : hello-ASR4110G-D04R-G2
+  rank      : 0 (local_rank: 0)
+  exitcode  : 2 (pid: 1395487)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+============================================================
