@@ -120,10 +120,11 @@ def get_tokenizer(model_name_or_path, cache_dir, model_max_length, ):
                     padding_side="right",
                 )
     special_tokens_dict = dict()
-    special_tokens_dict["pad_token"] = LLAMA_DEFAULT_PAD_TOKEN
-    special_tokens_dict["eos_token"] = LLAMA_DEFAULT_EOS_TOKEN
-    special_tokens_dict["bos_token"] = LLAMA_DEFAULT_BOS_TOKEN
-    special_tokens_dict["unk_token"] = LLAMA_DEFAULT_UNK_TOKEN
+    #移出硬编码的special_token
+    # special_tokens_dict["pad_token"] = LLAMA_DEFAULT_PAD_TOKEN
+    # special_tokens_dict["eos_token"] = LLAMA_DEFAULT_EOS_TOKEN
+    # special_tokens_dict["bos_token"] = LLAMA_DEFAULT_BOS_TOKEN
+    # special_tokens_dict["unk_token"] = LLAMA_DEFAULT_UNK_TOKEN
     # PROBLEM !!! -> fixed in smart_tokenizer_and_embedding_resize
     # if tokenizer.pad_token is None:
     #     special_tokens_dict["pad_token"] = DEFAULT_PAD_TOKEN
@@ -423,12 +424,14 @@ class SupervisedDataset(Dataset):
 
         if len(self.input_ids) != len(all_list_data_dict):
             logging.warning(f"Mismatch in length after tokenization. Initial: {len(all_list_data_dict)}, Tokenized: {len(self.input_ids)}. This might be due to filtering in preprocess or empty/invalid examples.")
+        # 添加原始索引列表
+        self.original_indices = list(range(len(self.input_ids)))
 
     def __len__(self):
         return len(self.input_ids)
 
-    def __getitem__(self, i) -> Dict[str, torch.Tensor]:
-        return dict(input_ids=self.input_ids[i], labels=self.labels[i])
+    def __getitem__(self, i) -> Dict[str, Union[torch.Tensor, int]]: # 或者 Dict[str, Any]
+        return dict(input_ids=self.input_ids[i], labels=self.labels[i], original_index=self.original_indices[i])
 
 @dataclass
 class DataCollatorForSupervisedDataset(object):

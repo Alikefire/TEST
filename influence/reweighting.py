@@ -3,16 +3,21 @@ import random
 import os
 
 if __name__ == '__main__':
+    # influence = {
+    #     "Mathematics": 6.58035278e-05,
+    #     "Coding": 7.74383545e-04,
+    #     "bbh": 1.30653381e-04,
+    #     "Instruction": 1.92642212e-04,
+    #     "TrustAI": -4.43458557e-05}
     influence = {
-        "Mathematics": 6.58035278e-05,
-        "Coding": 7.74383545e-04,
-        "bbh": 1.30653381e-04,
-        "Instruction": 1.92642212e-04,
-        "TrustAI": -4.43458557e-05}
+        "Code": 0.001220703125,
+        "Math": 0.0004863739013671875,
+        "Science": 0.00075531005859375}
     max_num = 0.15 #max_num表示了influence调整后的最大比例变化
     beta = max_num / max(abs(value) for value in influence.values())
     for key, value in influence.items():
         influence[key] = value * beta
+        print(f"{key} adujusted rate={influence[key]}")
 
     control_datasum = False
     original_training = f"/mnt/petrelfs/mingchenlin/DataEvolution/train_dataset_1_M1_M2-2"

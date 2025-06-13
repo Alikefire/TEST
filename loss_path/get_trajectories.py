@@ -13,7 +13,7 @@ import torch.distributed as dist
 import torch.nn.parallel as dp
 from torch.utils.data import DataLoader, DistributedSampler
 
-def loss(data, model, rank, world_size):
+def loss(data, model, rank, world_size, tokenizer=None):
     """compute last hidden states for a data_module"""
     # model is already on the correct device if wrapped by DDP
     model.eval()
@@ -23,7 +23,7 @@ def loss(data, model, rank, world_size):
 
     train_dataset = data["train_dataset"]
     if world_size > 1:
-        sampler = DistributedSampler(train_dataset, num_replicas=world_size, rank=rank)
+        sampler = DistributedSampler(train_dataset, num_replicas=world_size, rank=rank) #此处添加drop_last=True以确保不会添加样本来保证不同进程样本数一致
         dataloader = DataLoader(train_dataset, batch_size=1, sampler=sampler)
     else:
         dataloader = DataLoader(train_dataset, batch_size=1) # For single GPU, no sampler needed
@@ -35,62 +35,92 @@ def loss(data, model, rank, world_size):
         for _, datapoint in tqdm(enumerate(dataloader), total=len(dataloader), desc=f"Rank {rank}"):
             original_idx = datapoint['original_index'].item() #.item() 将张量其转回Python标量
             all_indices.append(original_idx)
+            # # 打印部分原始索引对应内容进行检查
+            # if(original_idx in {261, 262, 2216, 2217}):
+            #     #分别对应s1.1第262条，第263条，gsm8k-r1第235行，236行
+            #     # 解码并打印input_ids对应的文本内容
+            #     if(tokenizer is not None):
+            #         # 修正：使用 datapoint 中的 input_ids
+            #         input_ids = datapoint['input_ids'].squeeze()  # 移除batch维度
+            #         decoded_text = tokenizer.decode(input_ids, skip_special_tokens=True)
+            #         print(f"Text content: {decoded_text[:500]}...")  # 显示前500个字符
+            #         print("-" * 80)  # 分隔线
             print(f"Rank {rank}, Sample {_}, Original index: {original_idx}")
-            # 检查重复
-            duplicates = [idx for idx, count in Counter(all_indices).items() if count > 1]
-            print(f"Rank {rank}, Duplicate indices: {duplicates}")
             
-        #     # Data is already on CPU, move to GPU
-        #     # Move to specific GPU based on rank
-        #     input_ids = datapoint["input_ids"].cuda(rank)
-        #     labels = datapoint["labels"].cuda(rank)
+            # Data is already on CPU, move to GPU
+            # Move to specific GPU based on rank
+            input_ids = datapoint["input_ids"].cuda(rank)
+            labels = datapoint["labels"].cuda(rank)
             
-        #     # Ensure input_ids and labels have a batch dimension if they don't already
-        #     # This handles cases where batch_size=1 and DataLoader might drop the batch dim
-        #     if input_ids.dim() == 1:
-        #         input_ids = input_ids.unsqueeze(0)
-        #     if labels.dim() == 1:
-        #         labels = labels.unsqueeze(0)
-        #     #调试input_ids和labels的形状和数据类型
-        #     # print(f"Rank {rank}: input_ids shape: {input_ids.shape}, dtype: {input_ids.dtype}, device: {input_ids.device}")
-        #     # print(f"Rank {rank}: labels shape: {labels.shape}, dtype: {labels.dtype}, device: {labels.device}")
-        #     # # Optional: print tensor content for a few samples
-        #     # if _ < 5: # Print for first 5 samples
-        #     #     print(f"Rank {rank}: input_ids: {input_ids}")
-        #     #     print(f"Rank {rank}: labels: {labels}")
+            # Ensure input_ids and labels have a batch dimension if they don't already
+            # This handles cases where batch_size=1 and DataLoader might drop the batch dim
+            if input_ids.dim() == 1:
+                input_ids = input_ids.unsqueeze(0)
+            if labels.dim() == 1:
+                labels = labels.unsqueeze(0)
+            #调试input_ids和labels的形状和数据类型
+            # print(f"Rank {rank}: input_ids shape: {input_ids.shape}, dtype: {input_ids.dtype}, device: {input_ids.device}")
+            # print(f"Rank {rank}: labels shape: {labels.shape}, dtype: {labels.dtype}, device: {labels.device}")
+            # # Optional: print tensor content for a few samples
+            # if _ < 5: # Print for first 5 samples
+            #     print(f"Rank {rank}: input_ids: {input_ids}")
+            #     print(f"Rank {rank}: labels: {labels}")
             
-        #     # Model is DDP wrapped, forward pass handles parallelism
-        #     result = model(input_ids=input_ids, labels=labels, return_dict=True)
-        #     current_loss = result.loss # 将loss赋给一个局部变量
-        #     # report progress only on rank 0
-        #     if rank == 0 and (_ == 1 or (_ != 0 and _ % 10000 == 0)):
-        #         rank0_print(f"***** Predict-Progress -- {_} DONE !")
-        #     losses.append(current_loss.detach().cpu())
-        #     loss_num += 1
+            # Model is DDP wrapped, forward pass handles parallelism
+            result = model(input_ids=input_ids, labels=labels, return_dict=True)
+            current_loss = result.loss # 将loss赋给一个局部变量
+            # report progress only on rank 0
+            if rank == 0 and (_ == 1 or (_ != 0 and _ % 10000 == 0)):
+                rank0_print(f"***** Predict-Progress -- {_} DONE !")
+            losses.append(current_loss.detach().cpu())
+            loss_num += 1
 
-        #     # 清理不再需要的张量引用
-        #     del input_ids
-        #     del labels
-        #     del result
-        #     del current_loss
+            # 清理不再需要的张量引用
+            del input_ids
+            del labels
+            del result
+            del current_loss
             
-        #     # 执行垃圾回收和清空CUDA缓存
-        #     gc.collect()
-        #     torch.cuda.empty_cache()
+            # 执行垃圾回收和清空CUDA缓存
+            gc.collect()
+            torch.cuda.empty_cache()
 
-        # rank0_print(f"***** Rank {rank}: Processed {loss_num} samples.")
+        rank0_print(f"***** Rank {rank}: Processed {loss_num} samples.")
 
     # Gather losses from all ranks
     if world_size > 1:
+        # 收集所有进程的索引
+        gathered_indices = [None for _ in range(world_size)]
+        dist.gather_object(all_indices, gathered_indices if rank == 0 else None, dst=0)
+
         gathered_losses = [None for _ in range(world_size)]
         # Gather objects to rank 0
         dist.gather_object(losses, gathered_losses if rank == 0 else None, dst=0)
 
         if rank == 0:
+            # 合并所有索引
+            all_indices_combined = [idx for sublist in gathered_indices for idx in sublist]
+            # 合并所有损失
+            all_losses_combined = [item for sublist in gathered_losses for item in sublist]
+
+            # 将 original_index 和对应的 loss 值配对
+            indexed_losses = []
+            for i in range(len(all_indices_combined)):
+                indexed_losses.append((all_indices_combined[i], all_losses_combined[i]))
+
+            # 根据 original_index 进行排序
+            indexed_losses.sort(key=lambda x: x[0])
+
+            # 提取排序后的损失值
+            sorted_losses = [loss_val for idx, loss_val in indexed_losses]
+
+            # 检查重复，需要在主进程中完成，而不是每一个进程单独检查
+            duplicates = [idx for idx, count in Counter(all_indices_combined).items() if count > 1]
+            print(f"Global duplicate indices: {duplicates}")
+
             # Flatten the list of lists
-            all_losses = [item for sublist in gathered_losses for item in sublist]
-            rank0_print(f"***** All loss trajectories = {len(all_losses)}")
-            return all_losses
+            rank0_print(f"***** All loss trajectories = {len(sorted_losses)}")
+            return sorted_losses
         else:
             return None # Only rank 0 returns the combined losses
     else:
@@ -198,16 +228,16 @@ def main(model_path, config_file=None, ckpt=-1):
         actual_data_paths_list = [path.strip() for path in full_data_path_str.split(',')]
     else:
         actual_data_paths_list = []
-    all_data = make_supervised_data_module(tokenizer=tokenizer, data_path=actual_data_paths_list, data_format=["sharegpt","alpaca","alpaca","alpaca"])
+    all_data = make_supervised_data_module(tokenizer=tokenizer, data_path=actual_data_paths_list, data_format=["sharegpt","alpaca"])
 
-    mean_entropies_all = loss(data=all_data, model=model, rank=rank, world_size=world_size)
+    mean_entropies_all = loss(data=all_data, model=model, rank=rank, world_size=world_size, tokenizer=tokenizer)
     # Ensure all processes are done before saving and destroying group
     if initialized_dist:
         dist.barrier() # Ensure all processes have finished loss computation
 
-    # if rank == 0: # Only rank 0 saves the file
-    #     torch.save(mean_entropies_all, loss_file)
-    #     print(f"***** Losses saved to {loss_file}")
+    if rank == 0: # Only rank 0 saves the file
+        torch.save(mean_entropies_all, loss_file)
+        print(f"***** Losses saved to {loss_file}")
     
     # Clean up distributed environment if it was initialized by this process
     if initialized_dist:
