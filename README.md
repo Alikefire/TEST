@@ -71,11 +71,13 @@ python ./TEST/loss_path/sampling_script.py
 ./TEST/influence/run_influence_analysis.sh
 ```
 注意 ： sub-train 参数必须与子集名称保持一致。
+
  3.2 Pareto 优化
 ```
 python ./TEST/influence/pareto_optimization.py
 ```
 功能 ：计算 Pareto 前沿下的复杂影响力权重。
+
  3.3 数据重新加权
 ```
 python ./TEST/influence/reweighting.py
