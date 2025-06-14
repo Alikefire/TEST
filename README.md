@@ -62,6 +62,7 @@ python ./TEST/loss_path/sampling_script.py
 - 5% 测试集（不同聚类子集合并后的总体测试集） 
 
 2.4 影响力分析的base模型训练
+
 使用分割好的训练集重新对 Qwen2.5-0.5B-instruct 进行 SFT 训练，得到进行影响力分析的初始模型。
 
 ### 第三步：影响力分析 
