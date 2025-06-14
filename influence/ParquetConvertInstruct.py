@@ -70,8 +70,8 @@ if __name__ == "__main__":
     # 假设您希望输出的JSONL文件名为 'output.jsonl'
     subset_name="math"
     max_samples_to_read = 200  # 设置您希望读取的最大样本数目
-    input_file = f"/home/xiexin/xx_help/LLaMA-Factory/data/open-r1/Mixture-of-Thoughts/{subset_name}/train-00001-of-00004.parquet"
-    output_file = f"/home/xiexin/xx_help/LLaMA-Factory/data/open-r1/Mixture-of-Thoughts/mix_train_data/{subset_name}/{subset_name}_{max_samples_to_read}.jsonl"
+    input_file = f"./data/open-r1/Mixture-of-Thoughts/{subset_name}/train-00001-of-00004.parquet"
+    output_file = f"./data/open-r1/Mixture-of-Thoughts/mix_train_data/{subset_name}/{subset_name}_{max_samples_to_read}.jsonl"
 
 
     # 运行转换

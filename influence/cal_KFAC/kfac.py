@@ -1,6 +1,3 @@
-'''
-Developed by: Ming
-'''
 import sys
 import torch
 import torch.nn as nn
@@ -129,6 +126,9 @@ def get_lambda_ii_list(model, device, dataloader, mlp_blocks, q_a_list, q_s_list
     # sys.stdout.flush()
 
     lambda_ii_avg_list = [0.0] * len(mlp_blocks)
+     # 添加数据集长度检查
+    if len(dataloader) == 0:
+        print(f"[rank{rank}]: Warning: dataloader is empty, returning zero lambda_ii_avg_list")
 
     layer_info = {}
     for name, module in model.named_modules():

@@ -99,7 +99,7 @@ def run_checkpoints_with_all_gpus(model_path, config_file, checkpoint_list):
         ]
 
         cmd = cmd_prefix + [
-            "/home/xiexin/xx_help/S2L/get_trajectories.py",
+            "TEST/loss_path/get_trajectories.py",
             "--model_path", model_path,
         ]
         

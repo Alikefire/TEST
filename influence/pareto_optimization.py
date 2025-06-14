@@ -6,13 +6,13 @@ from pymoo.optimize import minimize
 from pymoo.visualization.scatter import Scatter
 
 # 读取影响因子矩阵
-influence_file = '/home/xiexin/xx_help/IDEAL-678C520/influence_outputs/Qwen2.5-0.5B-Instruct-mix_200/influence.csv'
+influence_file = './TEST/influence/influence_outputs/Qwen2.5-0.5B-Instruct-long_short/influence.csv'
 df = pd.read_csv(influence_file, index_col=0)
 
-# 提取影响因子矩阵，跳过第一行（val_avg_grad.pt的数据）
-M_IF = df.iloc[1:].values  # 获取数值部分
-N_subsets = M_IF.shape[0]  # 数据子集的数量
-N_objectives = M_IF.shape[1]  # 目标评估集的数量
+# 提取影响因子矩阵，跳过第一行（val_avg_grad.pt的数据）并转置
+M_IF = df.iloc[1:].values.T  # 转置矩阵：行=训练子集，列=评估集
+N_subsets = M_IF.shape[0]  # 训练子集的数量（决策变量数量）
+N_objectives = M_IF.shape[1]  # 评估集的数量（目标函数数量）
 
 class InfluenceProblem(ElementwiseProblem):
     def __init__(self, m_if_matrix):
@@ -59,7 +59,7 @@ print(res.F)
 if N_objectives == 2 or N_objectives == 3:
     plot = Scatter(title=f"Pareto Front ({N_objectives} Objectives)")
     plot.add(res.F, s=30, facecolors='none', edgecolors='r')
-    plot.save('/home/xiexin/xx_help/IDEAL-678C520/ParetoFront.png', dpi=300, bbox_inches='tight')
+    plot.save('./TEST/influence/influence_outputs/ParetoFront.png', dpi=300, bbox_inches='tight')
     plot.show()
 elif N_objectives > 3:
     print("目标维度大于3，标准散点图可能不适用。")
@@ -89,13 +89,14 @@ if res.F is not None and len(res.F) > 0:
     
     # 创建结果DataFrame
     results_df = pd.DataFrame()
-    results_df['Dataset'] = df.index[1:]  # 使用原始数据集的名称，跳过第一行
+    # 使用列名（训练子集名称）而不是行名（评估集名称）
+    results_df['Dataset'] = df.columns  # 训练子集的名称
     results_df['Weight (Best for Obj1)'] = selected_weights_obj1
     results_df['Weight (Balanced)'] = selected_weights_balanced
     
     # 保存结果
-    output_file = '/home/xiexin/xx_help/IDEAL-678C520/influence_outputs/Qwen2.5-0.5B-Instruct-mix_200/pareto_weights.csv'
-    results_df.to_csv(output_file)
+    output_file = './TEST/influence/influence_outputs/Qwen2.5-0.5B-Instruct-long_short/pareto_weights.csv'
+    results_df.to_csv(output_file, index=False)
     print(f"\n权重已保存到: {output_file}")
 else:
     print("\n未能找到帕累托最优解。")

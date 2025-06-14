@@ -32,11 +32,11 @@ def main(args):
     # calculate KFAC
     train_dataset = LoadDataset(all_file_paths=args.full_train,
                                 tokenizer=tokenizer,
-                                max_seq_length=1024,
+                                max_seq_length=32768,
                                 sample_percentage=train_sample_rate)
     train_sampler = DistributedSampler(train_dataset, shuffle=True)
     train_dataloader = DataLoader(train_dataset, sampler=train_sampler, batch_size=8, drop_last=True)
-    cal_ihvp(train_dataloader, model, args.save_path, args, local_rank)
+    # cal_ihvp(train_dataloader, model, args.save_path, args, local_rank) #注释此行以避免重复计算
     del train_dataloader
     del train_sampler
     del train_dataset
@@ -47,11 +47,12 @@ def main(args):
     # calculate validation gradient
     validation_dataset = LoadDataset(all_file_paths=args.validation_path,
                                     tokenizer=tokenizer,
-                                    max_seq_length=1024,
+                                    max_seq_length=32768,
                                     sample_percentage=val_sample_rate)
     validation_sampler = DistributedSampler(validation_dataset, shuffle=True)
     validation_dataloader = DataLoader(validation_dataset, sampler=validation_sampler, batch_size=8)
-    validation_grad_path = cal_grad(validation_dataloader, model, args.save_path + f"/val_avg_grad", args, local_rank)
+    # validation_grad_path = cal_grad(validation_dataloader, model, args.save_path + f"/val_avg_grad", args, local_rank) #注释此行以避免重复计算
+    validation_grad_path=args.save_path + f"/val_avg_grad.pt"
     per_val_list.append(validation_grad_path)
     del validation_dataloader
     del validation_sampler
@@ -63,11 +64,12 @@ def main(args):
         if os.path.exists(subset_path):
             dataset = LoadDataset(all_file_paths=subset_path,
                                   tokenizer=tokenizer,
-                                  max_seq_length=1024, #max_length改
+                                  max_seq_length=32768, #max_length改
                                   sample_percentage=val_sample_rate)
             sampler = DistributedSampler(dataset, shuffle=True)
             dataloader = DataLoader(dataset, sampler=sampler, batch_size=8)
-            subset_grad_path = cal_grad(dataloader, model, args.save_path + f"/val_{subset}_grad", args, local_rank)
+            # subset_grad_path = cal_grad(dataloader, model, args.save_path + f"/val_{subset}_grad", args, local_rank) #注释此行以避免重复计算
+            subset_grad_path = args.save_path + f"/val_{subset}_grad.pt"
             per_val_list.append(subset_grad_path)
             # release memory
             del dataloader
@@ -80,33 +82,64 @@ def main(args):
         print(per_val_list)
     
     
-    final_result = np.zeros((len(per_val_list), len(args.sub_train)))
     per_train_list = []
+    
     for i, subset in enumerate(args.sub_train):
         subset_path = os.path.join(args.full_train, subset)
         if os.path.exists(subset_path):
-            dataset = LoadDataset(all_file_paths=subset_path,
-                                tokenizer=tokenizer,
-                                max_seq_length=1024,
-                                sample_percentage=train_sample_rate)
-            sampler = DistributedSampler(dataset, shuffle=True)
-            dataloader = DataLoader(dataset, sampler=sampler, batch_size=8)
-            avg_grad_path = cal_grad(dataloader, model, args.save_path + f"/train_{subset}_grad", args, local_rank)
-            per_train_list.append(avg_grad_path)
-            # release memory
-            del dataloader
-            del sampler
-            del dataset
-            torch.cuda.empty_cache()
-            gc.collect()
-    
+            # 获取该子集中的所有json/jsonl文件
+            subset_files = []
+            for filename in os.listdir(subset_path):
+                if filename.endswith('.json') or filename.endswith('.jsonl'):
+                    file_path = os.path.join(subset_path, filename)
+                    subset_files.append(file_path)
+            
+            # 为每个文件分别计算梯度
+            subset_grad_paths = []
+            for j, file_path in enumerate(subset_files):
+                # 创建只包含单个文件的临时目录路径（用于LoadDataset）
+                temp_dir = os.path.dirname(file_path)
+                temp_filename = os.path.basename(file_path)
+                
+                # 创建只包含当前文件的数据集
+                dataset = LoadDataset(all_file_paths=temp_dir,
+                                    tokenizer=tokenizer,
+                                    max_seq_length=32768,
+                                    sample_percentage=train_sample_rate)
+                
+                
+                if len(dataset.data_indices) > 0:  # 确保文件中有数据
+                    sampler = DistributedSampler(dataset, shuffle=True)
+                    dataloader = DataLoader(dataset, sampler=sampler, batch_size=8)
+                    
+                    # 为每个文件生成唯一的保存路径
+                    file_basename = os.path.splitext(temp_filename)[0]
+                    grad_save_path = args.save_path + f"/train_{subset}_{file_basename}_grad"
+                    # avg_grad_path = cal_grad(dataloader, model, grad_save_path, args, local_rank) #注释此行以避免重复计算
+                    avg_grad_path = grad_save_path+".pt"
+                    subset_grad_paths.append(avg_grad_path)
+                    
+                    # release memory
+                    del dataloader
+                    del sampler
+                
+                del dataset
+                torch.cuda.empty_cache()
+                gc.collect()
+            
+            # 将该子集的所有文件梯度路径添加到列表中
+            per_train_list.extend(subset_grad_paths)
+            
+    # 在计算完所有训练梯度后，重新初始化final_result
     if local_rank == 0:
-        print(per_train_list)
-
+        print(f"Total training gradient files: {len(per_train_list)}")
+    
     del model, tokenizer
     torch.cuda.empty_cache()
     gc.collect()
     
+    # 修改这里：基于实际的训练文件数量初始化
+    final_result = np.zeros((len(per_val_list), len(per_train_list)))
     
     for i in range(len(per_train_list)):
         for j in range(len(per_val_list)):

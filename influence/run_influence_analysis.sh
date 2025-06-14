@@ -7,10 +7,10 @@
 # 配置区（按需修改）
 # --------------------------
 # 设置模型、数据集和保存路径
-MODEL_PATH="/home/xiexin/xx_help/LLaMA-Factory/Model/OriginalModel/Qwen/Qwen2.5-0.5B-Instruct" # 替换为您的模型路径
-FULL_TRAIN_DATASET="/home/xiexin/xx_help/LLaMA-Factory/data/open-r1/Mixture-of-Thoughts/mix_train_data" # 替换为您的完整训练数据集路径
-VALIDATION_DATASET="/home/xiexin/xx_help/LLaMA-Factory/data/open-r1/Mixture-of-Thoughts/mix_val_data" # 替换为您的验证数据集路径
-SAVE_PATH="./influence_outputs/Qwen2.5-0.5B-Instruct-mix_200" # 替换为您的结果保存路径
+MODEL_PATH="./Model/OriginalModel/Qwen/Qwen2.5-0.5B-Instruct" # 替换为您的模型路径
+FULL_TRAIN_DATASET="./output_per_dataset_analysis/processed_splits/train" # 替换为您的完整训练数据集路径
+VALIDATION_DATASET="./output_per_dataset_analysis/processed_splits/evaluation" # 替换为您的验证数据集路径
+SAVE_PATH="./TEST/influence/influence_outputs/Qwen2.5-0.5B-Instruct-long_short" # 替换为您的结果保存路径
 LOG_DIR="logs"                        # 日志存放目录
 TIMESTAMP=$(date "+%Y%m%d-%H%M%S")    # 时间戳格式
 LOG_FILE="${LOG_DIR}/influence_train_${TIMESTAMP}.log"
@@ -56,7 +56,7 @@ echo "📅 开始时间: $(date)"
 #分布式训练使用torchrun 或 accelerate launch启动。单卡使用python启动。改到了在内层使用accelerate launch
 #sub-train 保持和val子集目录顺序一致
 accelerate launch \
-  main.py \
+  ./TEST/influence/main.py \
   --model-path "$MODEL_PATH" \
   --full-train "$FULL_TRAIN_DATASET" \
   --validation-path "$VALIDATION_DATASET" \
@@ -65,7 +65,7 @@ accelerate launch \
   --target-layers "model.layers.1.mlp.gate_proj" "model.layers.5.mlp.gate_proj" "model.layers.10.mlp.gate_proj" "model.layers.15.mlp.gate_proj" "model.layers.20.mlp.gate_proj" "model.layers.24.mlp.gate_proj" "model.layers.25.mlp.gate_proj" "model.layers.26.mlp.gate_proj" "model.layers.27.mlp.gate_proj" "model.layers.28.mlp.gate_proj" \
   --without-output False \
   --without-attention False \
-  --sub-train "code" "math" "science"
+  --sub-train "gsm8k-gpt4o_train" "gsm8k-r1_train" "s1K-mix_s1_brief_cot"
 
 # --------------------------
 # 结果检查

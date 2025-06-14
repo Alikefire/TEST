@@ -115,8 +115,17 @@ def loss(data, model, rank, world_size, tokenizer=None):
             sorted_losses = [loss_val for idx, loss_val in indexed_losses]
 
             # 检查重复，需要在主进程中完成，而不是每一个进程单独检查
+            # 在 get_trajectories.py 中
             duplicates = [idx for idx, count in Counter(all_indices_combined).items() if count > 1]
-            print(f"Global duplicate indices: {duplicates}")
+            
+            # 保存到文件（仅在有重复项时保存）
+            if duplicates:  # 添加非空判断
+                import json
+                with open('duplicates_config.json', 'w') as f:
+                    json.dump({'duplicates': duplicates}, f)
+                print(f"Global duplicate indices: {duplicates}")
+            else:
+                print("No duplicate indices found.")
 
             # Flatten the list of lists
             rank0_print(f"***** All loss trajectories = {len(sorted_losses)}")
@@ -228,7 +237,7 @@ def main(model_path, config_file=None, ckpt=-1):
         actual_data_paths_list = [path.strip() for path in full_data_path_str.split(',')]
     else:
         actual_data_paths_list = []
-    all_data = make_supervised_data_module(tokenizer=tokenizer, data_path=actual_data_paths_list, data_format=["sharegpt","alpaca"])
+    all_data = make_supervised_data_module(tokenizer=tokenizer, data_path=actual_data_paths_list, data_format=args["data_format"])
 
     mean_entropies_all = loss(data=all_data, model=model, rank=rank, world_size=world_size, tokenizer=tokenizer)
     # Ensure all processes are done before saving and destroying group
@@ -251,6 +260,7 @@ if __name__ == '__main__':
     parser.add_argument('--model_path', type=str, required=True,
                         help='Either local model directory (with config) or HuggingFace model path')
     parser.add_argument('--ckpt', type=int, default=-1,)
+    parser.add_argument('--data_format', type=str, default="alpaca",help='读取的数据格式包含MathInstructh、alpaca、sharegpt,可以为列表或者字符串')
     args = parser.parse_args()
     
     main(model_path=args.model_path, config_file=args.config_file, ckpt=args.ckpt)

@@ -25,61 +25,77 @@ class LoadDataset(Dataset):
     def _load_data_indices(self):
         data_indices = []
         for file_path in self.file_paths_list:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                while True:
-                    offset = f.tell()
-                    line = f.readline()
-                    if not line:
-                        break
-                    data_indices.append((file_path, offset))
-                    
+            if file_path.endswith('.jsonl'):
+                # 处理 .jsonl 文件（按行读取）
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    while True:
+                        offset = f.tell()
+                        line = f.readline()
+                        if not line:
+                            break
+                        data_indices.append((file_path, offset, 'jsonl'))
+            elif file_path.endswith('.json'):
+                # 处理 .json 文件（整个文件是一个JSON数组）
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    if isinstance(data, list):
+                        for idx, item in enumerate(data):
+                            data_indices.append((file_path, idx, 'json'))
+                    else:
+                        # 如果是单个对象，作为一个数据项
+                        data_indices.append((file_path, 0, 'json'))
+                        
         return data_indices
 
     def __len__(self):
         return len(self.data_indices)
-    
-    # def __getitem__(self, idx):
-    #     file_path, line_idx = self.data_indices[idx]
-    #     with open(file_path, 'r') as f:
-    #         for current_idx, line in enumerate(f):
-    #             if current_idx == line_idx:
-    #                 return self.tokenizer(line)
 
     def __getitem__(self, idx):
-        file_path, offset = self.data_indices[idx]
-        with open(file_path, 'r', encoding='utf-8') as f:
-            f.seek(offset)
-            line = f.readline()
-            sample = json.loads(line.strip())
-            question = sample['instruction'] + ' ' + sample['input']
-            answer = '\n### ' + sample['output']
-            
-            input_text = self.prompt + question + self.answer_prefix
-            target_text = answer + self.tokenizer.eos_token
+        file_path, offset_or_index, file_type = self.data_indices[idx]
+        
+        if file_type == 'jsonl':
+            # 处理 .jsonl 文件
+            with open(file_path, 'r', encoding='utf-8') as f:
+                f.seek(offset_or_index)
+                line = f.readline()
+                sample = json.loads(line.strip())
+        elif file_type == 'json':
+            # 处理 .json 文件
+            with open(file_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                if isinstance(data, list):
+                    sample = data[offset_or_index]
+                else:
+                    sample = data
+        
+        question = sample['instruction'] + ' ' + sample['input']
+        answer = '\n### ' + sample['output']
+        
+        input_text = self.prompt + question + self.answer_prefix
+        target_text = answer + self.tokenizer.eos_token
 
-            if self.tokenizer.pad_token is None:
-                self.tokenizer.pad_token = self.tokenizer.eos_token
-                self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
-                # print("Pad token ID:", self.tokenizer.pad_token_id)
+        if self.tokenizer.pad_token is None:
+            self.tokenizer.pad_token = self.tokenizer.eos_token
+            self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
 
-            encoding = self.tokenizer(
-                input_text + target_text,
-                add_special_tokens=False,
-                padding='max_length',
-                truncation=True,
-                max_length=self.pmt_len + self.ans_len,
-                return_tensors='pt'
-            )
+        encoding = self.tokenizer(
+            input_text + target_text,
+            add_special_tokens=False,
+            padding='max_length',
+            truncation=True,
+            max_length=self.pmt_len + self.ans_len,
+            return_tensors='pt'
+        )
 
-            labels = encoding['input_ids'].squeeze().clone()
-            labels[labels == self.tokenizer.pad_token_id] = -100
-            labels[:self.pmt_len] = -100
+        labels = encoding['input_ids'].squeeze().clone()
+        labels[labels == self.tokenizer.pad_token_id] = -100
+        labels[:self.pmt_len] = -100
 
-            return {
-                'input_ids': encoding['input_ids'].squeeze(),
-                'attention_mask': encoding['attention_mask'].squeeze(),
-                'labels': labels
-            }
+        return {
+            'input_ids': encoding['input_ids'].squeeze(),
+            'attention_mask': encoding['attention_mask'].squeeze(),
+            'labels': labels
+        }
 
 @contextlib.contextmanager
 def temp_seed(seed):
@@ -97,12 +113,12 @@ def load_train_files(all_file_paths):
     if has_subfolders:
         for dirpath, _, filenames in os.walk(all_file_paths):
             for filename in filenames:
-                if filename.endswith('.jsonl'):
+                if filename.endswith('.jsonl') or filename.endswith('.json'):
                     filepath = os.path.join(dirpath, filename)
                     file_path_list.append(filepath)
     else:
         for filename in os.listdir(all_file_paths):
-            if filename.endswith('.jsonl'):
+            if filename.endswith('.jsonl') or filename.endswith('.json'):
                 filepath = os.path.join(all_file_paths, filename)
                 file_path_list.append(filepath)
     return file_path_list

@@ -70,7 +70,13 @@ def load_dataset_info_from_paths(data_paths_list: list):
     all_sample_labels = []
     unique_dataset_names = []
     # 将 duplicated_sample_list 转换为 set，以便高效地进行查找和删除
-    duplicated_sample_set = set([261, 2216]) 
+    # 读取配置文件
+    try:
+        with open('duplicates_config.json', 'r') as f:
+            config = json.load(f)
+            duplicated_sample_set = set(config.get('duplicates', []))  # 默认为空列表
+    except FileNotFoundError:
+        duplicated_sample_set = set()  # 改为空集
     
     current_global_offset = 0 # 跟踪当前数据集在全局样本中的起始索引
 
