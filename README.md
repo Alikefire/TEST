@@ -34,8 +34,7 @@ pip install psutil
 2.1 生成损失轨迹
 修改/TEST/loss_path/configs/qwen2.5-0.5b_long-short_checkpoint.yml中的模型路径和数据集路径，然后执行：
 ```
-./TEST/loss_path/
-s2l_distributed_trajectories.sh
+./TEST/loss_path/s2l_distributed_trajectories.sh
 ```
 输出结果 ：
 
@@ -44,8 +43,7 @@ s2l_distributed_trajectories.sh
 
 2.2 聚类分析与数据分割
 ```
-python ./TEST/loss_path/
-plot_loss_clusters.py
+python ./TEST/loss_path/plot_loss_clusters.py
 ```
 功能 ：
 
@@ -55,8 +53,7 @@ plot_loss_clusters.py
 
 2.3 数据采样与分割
 ```
-python ./TEST/loss_path/sampling_script.
-py
+python ./TEST/loss_path/sampling_script.py
 ```
 数据分割策略 ：
 
@@ -70,14 +67,12 @@ py
 ### 第三步：影响力分析 
 3.1 运行影响力分析
 ```
-./TEST/influence/run_influence_analysis.
-sh
+./TEST/influence/run_influence_analysis.sh
 ```
 注意 ： sub-train 参数必须与子集名称保持一致。
  3.2 Pareto 优化
 ```
-python ./TEST/influence/
-pareto_optimization.py
+python ./TEST/influence/pareto_optimization.py
 ```
 功能 ：计算 Pareto 前沿下的复杂影响力权重。
  3.3 数据重新加权
