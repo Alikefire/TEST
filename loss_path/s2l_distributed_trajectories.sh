@@ -10,7 +10,7 @@ YAML_CONFIG="../S2L/configs/qwen2.5-0.5b_long-short_checkpoint.yml"  # 配置文
 LOG_DIR="logs"                        # 日志存放目录
 TIMESTAMP=$(date "+%Y%m%d-%H%M%S")    # 时间戳格式
 LOG_FILE="${LOG_DIR}/s2l_train_${TIMESTAMP}.log"
-WANDB_KEY="be3827dada95edbcf0fb39f0578c548340baf3f5"
+# WANDB_KEY="be3827dada95edbcf0fb39f0578c548340baf3f5"
 MODEL_PATH="./Model/MergeModel/DeepSeek-R1-Distill-Qwen-0.5B-long_short-sft-more_ckpt"
 #需要修改model_path为check所在目录
 # --------------------------

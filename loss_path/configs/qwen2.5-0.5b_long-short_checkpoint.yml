@@ -3,7 +3,7 @@ model_name_or_path: ./Model/OriginalModel/Qwen/Qwen2.5-0.5B-Instruct  # path to 
 cache_dir: data/huggingface_models
 model_max_length: 25000
 schedule_name: Full
-result_dir_name: ./Model/MergeModel/DeepSeek-R1-Distill-Qwen-0.5B-long_short-sft-more_ckpt
+result_dir_name: ./Model/MergeModel/DeepSeek-R1-Distill-Qwen-0.5B-long_short-sft-more_ckpt #checkpoint所在目录
 train_args:
   optim: adamw_torch
   num_train_epochs: 3

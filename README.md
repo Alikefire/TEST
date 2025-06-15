@@ -25,7 +25,7 @@ pip install psutil
 1. 训练基础模型
    
    - 使用 SFT 在 mix-of-thought 数据集上训练 Qwen2.5-0.5B 模型
-   - 保存约 15 个 checkpoint
+   - 保存约 15 个 checkpoint，
 2. 数据格式转换
    
    - 使用 influence/ParquetConvertInstruct.py 将 Parquet 文件转换为 Instruct 格式
@@ -49,13 +49,13 @@ python ./TEST/loss_path/plot_loss_clusters.py
 
 - 生成整体文件的聚类结果
 - 生成各子集的聚类结果
-- 根据聚类结果将训练集分割为不同的聚类子集 
+- 根据聚类结果将训练集分割为不同的聚类子集，得到的聚类中如果样本数小于10，会增大聚类数目重新聚类，此时需要手动删除那些样本数小于10的聚类以保持
 
 2.3 数据采样与分割
 ```
 python ./TEST/loss_path/sampling_script.py
 ```
-数据分割策略 ：
+数据分割策略 ：（采样是如何采样的，是否是每个聚类都进行均匀采样）验证集该怎么选，是按照聚类提供还是domain提供
 
 - 90% 训练集（按聚类子集分别保存）
 - 5% 验证集（不同聚类子集合并后的总体验证集）
@@ -76,13 +76,13 @@ python ./TEST/loss_path/sampling_script.py
 ```
 python ./TEST/influence/pareto_optimization.py
 ```
-功能 ：计算 Pareto 前沿下的复杂影响力权重。
+功能 ：计算 Pareto 前沿下的复杂影响力权重。(patore函数的具体计算过程，为什么没有负值)为什么要计算domian内部，自己对自己的影响力函数；把多个objective优先的patore最优解都计算出来
 
  3.3 数据重新加权
 ```
 python ./TEST/influence/reweighting.py
 ```
-功能 ：
+功能 ：（在小规模数据上验证迭代流程的具体效果）
 
 - 使用复杂影响力权重对训练集进行重新加权
 - 生成 reweighted_data 目录，包含加权后的训练数据
