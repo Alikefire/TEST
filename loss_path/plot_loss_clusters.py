@@ -208,32 +208,16 @@ def load_losses_from_checkpoints(ref_model_path, num_loss_ckpts=-1, train_idx=No
         print("No losses were successfully loaded.")
         return None, None # 修改：返回两个 None
 
-    # 确保所有 loss 张量可以被堆叠 (例如，具有相同的样本数量)
-    # 如果 loss 张量是一维的 (每个 checkpoint 一个 loss 文件，每个文件包含所有样本的 loss)
-    # 那么我们应该堆叠它们，然后转置
-    # 如果 loss 张量已经是 (num_samples, 1) 形状，我们应该连接它们
-    # 假设 losses.pt 存储的是一个 checkpoint 上所有样本的 loss 值 (1D tensor)
+    # losses.pt 存储的是一个 checkpoint 上所有样本的 loss 值 (1D tensor)
     
     # Check if all tensors in losses_list have the same shape
     # This is crucial before stacking. If they are 1D tensors of losses for all samples at a checkpoint:
     try:
-        # Attempt to stack. This assumes each file contains a 1D tensor of losses for all samples.
-        # Or, if each file contains a (num_samples, 1) tensor, hstack might be more appropriate after squeeze.
-        # For now, let's assume each losses.pt is a 1D tensor [loss_sample1, loss_sample2, ...]
         stacked_losses = torch.stack(losses_list)
     except RuntimeError as e:
         print(f"Error stacking losses. Ensure all loss tensors have compatible shapes. {e}")
-        # Try to handle cases where losses might be single float values per file (unlikely for trajectories)
-        # Or if they are already (N,1) and need to be concatenated along dim=1
-        # For simplicity, if stacking fails, we print an error and return.
-        # A more robust solution would inspect shapes and try different stacking/concatenation strategies.
-        # Example: if all are (N,1), then torch.cat(losses_list, dim=1)
-        # Example: if all are (1,N), then torch.cat(losses_list, dim=0).t()
-        # Given the original code's .t() later, it's likely each file is a 1D array of losses for samples.
         print("Attempting to stack assuming 1D tensors of losses per checkpoint...")
         # Pad if necessary, or ensure all files have the same number of entries.
-        # This part needs to be robust based on the actual structure of losses.pt
-        # For now, we'll proceed with the assumption that stack() should work or it's an error.
         return None, None # 修改：返回两个 None
 
     processed_losses = stacked_losses.t() # Transpose to get (num_samples, num_checkpoints)

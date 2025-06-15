@@ -41,6 +41,10 @@ pip install psutil
 - duplicated_config.json ：记录 losses.pt 文件中的重复样本序号
 - 各个 checkpoint 下的 losses.pt 文件 
 
+断点重训：
+- specify specific checkpoints，指定参数--checkpoints 1000,2000,3000,4000
+- Using a range (start:end:step)，指定参数--checkpoints 1000:5000:1000
+
 2.2 聚类分析与数据分割
 ```
 python ./TEST/loss_path/plot_loss_clusters.py
@@ -55,7 +59,7 @@ python ./TEST/loss_path/plot_loss_clusters.py
 ```
 python ./TEST/loss_path/sampling_script.py
 ```
-数据分割策略 ：（采样是如何采样的，是否是每个聚类都进行均匀采样）验证集该怎么选，是按照聚类提供还是domain提供
+数据分割策略 ：
 
 - 90% 训练集（按聚类子集分别保存）
 - 5% 验证集（不同聚类子集合并后的总体验证集）
@@ -76,13 +80,13 @@ python ./TEST/loss_path/sampling_script.py
 ```
 python ./TEST/influence/pareto_optimization.py
 ```
-功能 ：计算 Pareto 前沿下的复杂影响力权重。(patore函数的具体计算过程，为什么没有负值)为什么要计算domian内部，自己对自己的影响力函数；把多个objective优先的patore最优解都计算出来
+功能 ：计算 Pareto 前沿下的复杂影响力权重。
 
  3.3 数据重新加权
 ```
 python ./TEST/influence/reweighting.py
 ```
-功能 ：（在小规模数据上验证迭代流程的具体效果）
+功能 ：
 
 - 使用复杂影响力权重对训练集进行重新加权
 - 生成 reweighted_data 目录，包含加权后的训练数据

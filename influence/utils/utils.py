@@ -1,6 +1,3 @@
-'''
-Developed by: Ming
-'''
 import torch
 from torch import nn
 from typing import Any
