@@ -22,17 +22,30 @@ pip install psutil
 
 ## 🚀 使用流程
 ### 第一步：模型训练与数据预处理
-1.1数据采样与分割
+1.1 数据转换
+
+ParquetConvertInstruct.py用于转换mix-of-thought为alpaca或者sharegpt文件
+```
+python ./TEST/loss_path/ParquetConvertInstruct.py
+```
+1.2 数据预处理
 ```
 python ./TEST/loss_path/sampling_script.py
 ```
 数据分割策略 ：
 
-- 90% 训练集（按聚类子集分别保存）
-- 5% 验证集（不同聚类子集合并后的总体验证集）
-- 5% 测试集（不同聚类子集合并后的总体测试集）
+- 90% 训练集 train（保留原始的目录结构和json(jsonl)文件数目）
+- 5% 验证集 validation（不同json文件分别采样、合并后的总体验证集）
+- 5% 测试集 evaluation（不同json文件分别采样、合并后的总体测试集）
+- validation_cluster是validation的另一版本（不同json文件分别采样,合并前的总体验证集）
 
-1.2模型训练
+1.3 数据合并
+
+MergeJson.py用于合并多个json（jsonl）为一个json(jsonl)文件，对train数据合并后用于模型训练
+```
+python ./TEST/MergeJson.py
+```
+1.4 模型训练
 1. 训练基础模型
    
    - 使用 SFT 在 mix-of-thought 数据集上训练 Qwen2.5-0.5B 模型
@@ -102,3 +115,27 @@ python ./TEST/influence/reweighting.py
 2. 数据格式转换建议在流程开始时完成
 3. 子集名称在影响力分析中必须保持一致
 4. 建议按顺序执行各个步骤，确保依赖关系正确
+
+# Debug Report
+## 06.23
+### 代码修改
+1. 修正readme文件，将对数据采样与分割的步骤提前到1.1。
+2. 改进了patero方法的计算过程，增加了patore方法的多种策略选择 
+3. 增加了对影响力矩阵的可视化分析代码
+4. 增加ParquetConvertInstruct.py用于转换mix-of-thought为alpaca或者sharegpt文件，MergeJson用于合并多个json（jsonl）为一个json(jsonl)文件
+   
+### 思路纠正和转变:
+1. 纠正之前的讨论过程中忽略的应该何时对数据进行采样和分割的理解，之前的理解是采样和分割需要在聚类完成后。之前考虑的是为了让评估集更可靠，为了提高验证集的质量，所以才选择在loss聚类后才开始对数据集的采样和分割。这样做导致的问题有两个：
+
+- 需要额外的一次SFT过程，浪费了时间。
+- 相当于造成了验证集的泄露，因为你是通过训练模型在验证集上表现来选择验证集的。
+
+2. 验证集该怎么选
+   
+- 之前考虑的是验证集按照聚类提供还是domain提供，经过1点的思路转变后，现在只考虑按照domain选择验证集
+- 目前的方法是在域内随机采样数据作为验证集，
+
+4. 分析了phi-4方案的数据混合方法和我们方法的异同点
+
+- 独立优化各领域权重，然后拼接，利用“可加性”保留领域增益 -> 而我们是多领域的共同优化
+- 按领域和质量聚类数据源，对于同一聚类内的数据集分配统一权重 -> 和我们的区别在于聚类方法不同，我们是基于loss聚类，不同聚类代表不同的“可学习”程度
