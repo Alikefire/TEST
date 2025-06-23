@@ -1,13 +1,10 @@
-```
-# TEST - 模型训练与影响力分析工具包
+# TEST - 模型训练与影响力分析工具包
 
-本工具包提供了一套完整的模型训练、聚类分析和影
-响力分析流程，用于深入理解和优化语言模型的训练
-过程。
+本工具包提供了一套完整的模型训练、聚类分析和影响力分析流程，用于深入理解和优化语言模型的训练过程。
 
-## 📋 环境准备
+## 📋 环境准备
 
-### 依赖包安装
+### 依赖包安装
 
 以下包与 LlamaFactory 环境兼容：
 
@@ -16,6 +13,7 @@ pip install faiss-gpu
 pip install scikit-learn jsonlines
 pip install pymoo
 pip install psutil
+pip install seaborn
 ```
 ### 安装说明
 将 TEST 目录复制到 LlamaFactory 的根目录下，然后在 LlamaFactory 目录下执行后续操作。
@@ -56,6 +54,7 @@ python ./TEST/MergeJson.py
    - 重要 ：后续影响力函数计算需要使用 Instruct 格式的 JSONL 数据，建议提前转换
 ### 第二步：S2L 聚类分析 
 2.1 生成损失轨迹
+
 修改/TEST/loss_path/configs/qwen2.5-0.5b_long-short_checkpoint.yml中的模型路径和数据集路径，然后执行：
 ```
 ./TEST/loss_path/s2l_distributed_trajectories.sh
@@ -79,17 +78,15 @@ python ./TEST/loss_path/plot_loss_clusters.py
 - 生成各子集的聚类结果
 - 根据聚类结果将训练集分割为不同的聚类子集，得到的聚类中如果样本数小于10，会增大聚类数目重新聚类，此时需要手动删除那些样本数小于10的聚类以保持
 
-
-2.4 影响力分析的base模型训练
-
-使用分割好的训练集重新对 Qwen2.5-0.5B-instruct 进行 SFT 训练，得到进行影响力分析的初始模型。
-
 ### 第三步：影响力分析 
 3.1 运行影响力分析
 ```
 ./TEST/influence/run_influence_analysis.sh
 ```
-注意 ： sub-train 参数必须与子集名称保持一致。
+注意 ： 
+
+- sub-train 参数必须与子集名称保持一致。
+- influence分析目前只支持json对象格式为alpaca的的数据
 
  3.2 Pareto 优化
 ```
@@ -119,7 +116,7 @@ python ./TEST/influence/reweighting.py
 # Debug Report
 ## 06.23
 ### 代码修改
-1. 修正readme文件，将对数据采样与分割的步骤提前到1.1。
+1. 修正readme文件，将对数据采样与分割的步骤提前到1.2。
 2. 改进了patero方法的计算过程，增加了patore方法的多种策略选择 
 3. 增加了对影响力矩阵的可视化分析代码
 4. 增加ParquetConvertInstruct.py用于转换mix-of-thought为alpaca或者sharegpt文件，MergeJson用于合并多个json（jsonl）为一个json(jsonl)文件
