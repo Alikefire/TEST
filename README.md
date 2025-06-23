@@ -26,7 +26,7 @@ pip install psutil
 
 ParquetConvertInstruct.py用于转换mix-of-thought为alpaca或者sharegpt文件
 ```
-python ./TEST/loss_path/ParquetConvertInstruct.py
+python ./TEST/ParquetConvertInstruct.py
 ```
 1.2 数据预处理
 ```
