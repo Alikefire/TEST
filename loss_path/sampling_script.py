@@ -33,10 +33,12 @@ def sample_and_split_data(base_data_path, output_base_path):
     # Create separate directories for train, validation, and evaluation data
     train_base_path = os.path.join(output_base_path, "train")
     validation_base_path = os.path.join(output_base_path, "validation")
+    validation_cluster_base_path = os.path.join(output_base_path, "validation_cluster")
     evaluation_base_path = os.path.join(output_base_path, "evaluation")
     
     os.makedirs(train_base_path, exist_ok=True)
     os.makedirs(validation_base_path, exist_ok=True)
+    os.makedirs(validation_cluster_base_path, exist_ok=True)
     os.makedirs(evaluation_base_path, exist_ok=True)
 
     for subset_name in os.listdir(base_data_path):
@@ -49,10 +51,12 @@ def sample_and_split_data(base_data_path, output_base_path):
         # Create subset directories in each data type folder
         subset_train_path = os.path.join(train_base_path, subset_name)
         subset_validation_path = os.path.join(validation_base_path, subset_name)
+        subset_validation_cluster_path = os.path.join(validation_cluster_base_path, subset_name)
         subset_evaluation_path = os.path.join(evaluation_base_path, subset_name)
         
         os.makedirs(subset_train_path, exist_ok=True)
         os.makedirs(subset_validation_path, exist_ok=True)
+        os.makedirs(subset_validation_cluster_path, exist_ok=True)
         os.makedirs(subset_evaluation_path, exist_ok=True)
         
 
@@ -138,13 +142,17 @@ def sample_and_split_data(base_data_path, output_base_path):
                     train_data_cluster = []
                     eval_data_cluster = []
             
-            # Save training data for the current cluster in train directory
+            # Save training data for the current cluster in train and validation directory 
             if train_data_cluster:
                 cluster_train_output_filename = f"{original_filename_no_ext}_train.json"
+                cluster_validation_output_filename = f"{original_filename_no_ext}_validation.json"
                 cluster_train_output_path = os.path.join(subset_train_path, cluster_train_output_filename)
+                cluster_validation_output_path = os.path.join(subset_validation_cluster_path, cluster_validation_output_filename)
                 try:
                     with open(cluster_train_output_path, 'w', encoding='utf-8') as f:
                         json.dump(train_data_cluster, f, ensure_ascii=False, indent=4)
+                    with open(cluster_validation_output_path, 'w', encoding='utf-8') as f:
+                        json.dump(val_data_cluster, f, ensure_ascii=False, indent=4)
                     print(f"    Saved cluster training data to {cluster_train_output_path} ({len(train_data_cluster)} items)")
                 except IOError as e:
                     print(f"    Error saving training data for cluster {filename}: {e}")
@@ -181,9 +189,9 @@ def sample_and_split_data(base_data_path, output_base_path):
 
 if __name__ == '__main__':
     # IMPORTANT: Replace these paths with your actual directory paths
-    input_split_data_directory = './output_per_dataset_analysis/split_data'
+    input_split_data_directory = './data/open-r1/Mixture-of-Thoughts/mix_train_data/instruct_4k'
     # This will create separate train, validation, and evaluation directories
-    output_directory = './output_per_dataset_analysis/processed_splits'
+    output_directory = './data/open-r1/Mixture-of-Thoughts/mix_train_data/instruct_4k_processed'
     
     sample_and_split_data(input_split_data_directory, output_directory)
     print("Data sampling and splitting process finished.")

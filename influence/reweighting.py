@@ -65,19 +65,34 @@ def find_json_file(root_dir, top_level_dir, dataset_name, cluster_filename):
 
 if __name__ == '__main__':
     # 配置参数
-    csv_file_path = "./TEST/influence/influence_outputs/Qwen2.5-0.5B-Instruct-long_short/pareto_weights.csv"
+    csv_file_path = "./TEST/influence/influence_outputs/Qwen2.5-0.5B-Instruct-long_short/influence.csv"
     root_data_dir = "output_per_dataset_analysis/processed_splits"  # 根据您的描述设置
     target_dir = "output_per_dataset_analysis/reweighted_data"  # 输出目录
     max_num = 0.15  # 最大比例变化
-    control_datasum = False  # 是否控制总数据量
+    control_datasum = True  # 是否控制总数据量
+    weight_column_index = 0  # 选择使用哪个权重列（0表示第一个权重列，1表示第二个，以此类推）
     
     # 读取CSV文件，使用第一行作为表头
     df = pd.read_csv(csv_file_path, header=0)
-    # 重命名列以便于使用
-    df.columns = ['grad_file_path', 'weight1', 'weight2']
     
-    # 使用第一个权重列（您可以根据需要选择使用哪个权重）
-    weights = df['weight1'].values
+    # 动态处理列名：第一列是文件路径，其余列都是权重列
+    original_columns = df.columns.tolist()
+    new_columns = ['grad_file_path'] + [f'weight{i+1}' for i in range(len(original_columns)-1)]
+    df.columns = new_columns
+    
+    # 获取所有权重列名
+    weight_columns = [col for col in df.columns if col.startswith('weight')]
+    print(f"检测到 {len(weight_columns)} 个权重列: {weight_columns}")
+    
+    # 检查权重列索引是否有效
+    if weight_column_index >= len(weight_columns):
+        print(f"错误：权重列索引 {weight_column_index} 超出范围，最大索引为 {len(weight_columns)-1}")
+        exit(1)
+    
+    # 选择要使用的权重列
+    selected_weight_column = weight_columns[weight_column_index]
+    print(f"使用权重列: {selected_weight_column}")
+    weights = df[selected_weight_column].values
     
     # 归一化权重
     if len(weights) > 0:
@@ -150,6 +165,7 @@ if __name__ == '__main__':
         for key in adjusted_counts.keys():
             adjusted_counts[key] = int(adjusted_counts[key] * old_sum / new_sum)
             adjusted_counts[key] = max(1, adjusted_counts[key])  # 确保至少有1条数据
+        print(f"调整后总数据量: {sum(adjusted_counts.values())}")
     
     # 调整数据
     for key in training_data.keys():

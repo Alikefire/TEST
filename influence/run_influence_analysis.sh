@@ -9,7 +9,7 @@
 # 设置模型、数据集和保存路径
 MODEL_PATH="./Model/OriginalModel/Qwen/Qwen2.5-0.5B-Instruct" # 替换为您的模型路径
 FULL_TRAIN_DATASET="./output_per_dataset_analysis/processed_splits/train" # 替换为您的完整训练数据集路径
-VALIDATION_DATASET="./output_per_dataset_analysis/processed_splits/evaluation" # 替换为您的验证数据集路径
+VALIDATION_DATASET="./output_per_dataset_analysis/processed_splits/validation" # 替换为您的验证数据集路径
 SAVE_PATH="./TEST/influence/influence_outputs/Qwen2.5-0.5B-Instruct-long_short" # 替换为您的结果保存路径
 LOG_DIR="logs"                        # 日志存放目录
 TIMESTAMP=$(date "+%Y%m%d-%H%M%S")    # 时间戳格式
@@ -20,7 +20,7 @@ LOG_FILE="${LOG_DIR}/influence_train_${TIMESTAMP}.log"
 # --------------------------
 # 环境变量配置
 # --------------------------
-export CUDA_VISIBLE_DEVICES=2,6,7      # 指定使用GPU 
+export CUDA_VISIBLE_DEVICES=0,4      # 指定使用GPU 
 export NCCL_P2P_DISABLE=1             # 禁用NCCL P2P通信
 export NCCL_IB_DISABLE=1              # 禁用NCCL InfiniBand
 export FORCE_TORCHRUN=1               #强制使用 torchrun 而不是 torch.distributed.launch
