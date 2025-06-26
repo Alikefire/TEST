@@ -10,7 +10,16 @@ import signal
 import psutil  # 需要安装: pip install psutil
 
 def get_available_gpus():
-    """Returns list of available GPU indices as a comma-separated string."""
+    """Returns list of available GPU indices as a comma-separated string.
+       Reads from CUDA_VISIBLE_DEVICES for accuracy.
+    """
+    visible_devices = os.environ.get("CUDA_VISIBLE_DEVICES")
+    if visible_devices and re.match(r'^\d+(,\s*\d+)*$', visible_devices):
+        # Return the cleaned-up string of GPU IDs from the environment variable
+        return visible_devices.replace(" ", "")
+
+    # Fallback to original behavior if CUDA_VISIBLE_DEVICES is not set or malformed
+    print("Warning: CUDA_VISIBLE_DEVICES not set or invalid. Falling back to torch.cuda.device_count().")
     num_gpus = torch.cuda.device_count()
     if num_gpus == 0:
         return ""

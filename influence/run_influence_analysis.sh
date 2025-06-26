@@ -20,7 +20,7 @@ LOG_FILE="${LOG_DIR}/influence_train_${TIMESTAMP}.log"
 # --------------------------
 # 环境变量配置
 # --------------------------
-export CUDA_VISIBLE_DEVICES=0,4      # 指定使用GPU 
+export CUDA_VISIBLE_DEVICES=1,3,7      # 指定使用GPU 
 export NCCL_P2P_DISABLE=1             # 禁用NCCL P2P通信
 export NCCL_IB_DISABLE=1              # 禁用NCCL InfiniBand
 export FORCE_TORCHRUN=1               #强制使用 torchrun 而不是 torch.distributed.launch

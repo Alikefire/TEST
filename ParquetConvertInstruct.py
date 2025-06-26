@@ -132,12 +132,12 @@ def convert_parquet_to_sharegpt(input_parquet_path, output_jsonl_path, max_sampl
                 print(f"Warning: Unknown role '{dialogue.get('role')}' at row {index}. Skipping this message.")
 
         # # 只有当conversations不为空时才添加到输出数据
-        # if conversations:
-        #     output_data.append({
-        #         "conversations": conversations,
-        #         "system": "",
-        #         "tools": ""
-        #     })
+        if conversations:
+            output_data.append({
+                "conversations": conversations,
+                "system": "",
+                "tools": ""
+            })
 
     # 将转换后的数据写入JSONL文件
     with open(output_jsonl_path, 'w', encoding='utf-8') as f:

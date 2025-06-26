@@ -1,0 +1,13 @@
+Dataset,Weight (Best for Obj1),Weight (Balanced)
+./TEST/influence/influence_outputs/Qwen2.5-0.5B-Instruct-long_short/train_gsm8k-gpt4o_train_cluster_3_train_grad.pt,0.0033866892536005564,0.005221145715551239
+./TEST/influence/influence_outputs/Qwen2.5-0.5B-Instruct-long_short/train_gsm8k-gpt4o_train_cluster_0_train_grad.pt,0.001585510089072137,0.0029161620317759347
+./TEST/influence/influence_outputs/Qwen2.5-0.5B-Instruct-long_short/train_gsm8k-gpt4o_train_cluster_2_train_grad.pt,1.486966938942663e-05,0.00022150594165724175
+./TEST/influence/influence_outputs/Qwen2.5-0.5B-Instruct-long_short/train_gsm8k-gpt4o_train_cluster_4_train_grad.pt,0.000713472424865603,0.0027758083790666577
+./TEST/influence/influence_outputs/Qwen2.5-0.5B-Instruct-long_short/train_gsm8k-r1_train_cluster_1_train_grad.pt,0.5172006833725723,0.29805096201474207
+./TEST/influence/influence_outputs/Qwen2.5-0.5B-Instruct-long_short/train_gsm8k-r1_train_cluster_3_train_grad.pt,0.07375936799839163,0.032057017407747614
+./TEST/influence/influence_outputs/Qwen2.5-0.5B-Instruct-long_short/train_gsm8k-r1_train_cluster_0_train_grad.pt,0.09996497121590556,0.08482806141779065
+./TEST/influence/influence_outputs/Qwen2.5-0.5B-Instruct-long_short/train_gsm8k-r1_train_cluster_2_train_grad.pt,0.20726090220536048,0.015906707579617867
+./TEST/influence/influence_outputs/Qwen2.5-0.5B-Instruct-long_short/train_s1K-mix_s1_brief_cot_cluster_1_train_grad.pt,0.04581975230977699,0.12940962277831564
+./TEST/influence/influence_outputs/Qwen2.5-0.5B-Instruct-long_short/train_s1K-mix_s1_brief_cot_cluster_3_train_grad.pt,0.022253961507661676,0.11773640930898635
+./TEST/influence/influence_outputs/Qwen2.5-0.5B-Instruct-long_short/train_s1K-mix_s1_brief_cot_cluster_0_train_grad.pt,0.005849860066552596,0.02190985308246882
+./TEST/influence/influence_outputs/Qwen2.5-0.5B-Instruct-long_short/train_s1K-mix_s1_brief_cot_cluster_2_train_grad.pt,0.03133091179028811,0.2978722976350971

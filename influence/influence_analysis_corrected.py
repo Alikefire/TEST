@@ -39,19 +39,24 @@ class InfluenceMatrixAnalyzer:
         self.influence_matrix = self.df.values.astype(float)
         
         # 识别平均影响因子行（第一行）
-        avg_row_idx = 0
+        avg_row_idx = -1 # 初始化为-1，表示未找到
         for i, idx in enumerate(self.df.index):
             if 'val_avg_grad.pt' in str(idx):
                 avg_row_idx = i
                 break
         
         # 分离平均影响因子和聚类数据
-        self.avg_influence = self.influence_matrix[avg_row_idx, :]
-        
-        # 创建仅包含聚类数据的矩阵（排除平均行）
-        cluster_indices = [i for i in range(len(self.df.index)) if i != avg_row_idx]
-        self.cluster_matrix = self.influence_matrix[cluster_indices, :]
-        
+        if avg_row_idx != -1:
+            self.avg_influence = self.influence_matrix[avg_row_idx, :]
+            # 创建仅包含聚类数据的矩阵（排除平均行）
+            cluster_indices = [i for i in range(len(self.df.index)) if i != avg_row_idx]
+            self.cluster_matrix = self.influence_matrix[cluster_indices, :]
+        else:
+            # 如果没有平均行，则所有数据都是聚类数据
+            self.avg_influence = np.array([]) # 空的
+            self.cluster_matrix = self.influence_matrix
+            cluster_indices = list(range(len(self.df.index)))
+
         # 提取标签信息
         self.val_labels = [self._extract_label(idx) for idx in self.df.index]
         self.train_labels = [self._extract_label(col) for col in self.df.columns]
@@ -108,11 +113,11 @@ class InfluenceMatrixAnalyzer:
         if include_avg:
             matrix_to_plot = self.influence_matrix
             val_labels_to_plot = self.val_labels
-            title_suffix = "（包含平均影响因子）"
+            title_suffix = " (with average influence)"
         else:
             matrix_to_plot = self.cluster_matrix
             val_labels_to_plot = self.cluster_val_labels
-            title_suffix = "（仅聚类数据）"
+            title_suffix = " (clusters only)"
         
         plt.figure(figsize=figsize)
         
@@ -125,11 +130,11 @@ class InfluenceMatrixAnalyzer:
                    cmap='RdYlBu_r',
                    center=0,
                    square=True,
-                   cbar_kws={'label': '影响力值'})
+                   cbar_kws={'label': 'Influence Value'})
         
-        plt.title(f'训练子集聚类对验证子集聚类的影响力矩阵{title_suffix}', fontsize=16, pad=20)
-        plt.xlabel('训练子集聚类', fontsize=12)
-        plt.ylabel('验证子集聚类', fontsize=12)
+        plt.title(f'Influence Matrix of Train Subset Clusters on Validation Subset Clusters{title_suffix}', fontsize=16, pad=20)
+        plt.xlabel('Train Subset Clusters', fontsize=12)
+        plt.ylabel('Validation Subset Clusters', fontsize=12)
         plt.xticks(rotation=45, ha='right')
         plt.yticks(rotation=0)
         plt.tight_layout()
@@ -138,11 +143,17 @@ class InfluenceMatrixAnalyzer:
             suffix = '_with_avg' if include_avg else '_clusters_only'
             save_path_modified = save_path.replace('.png', f'{suffix}.png')
             plt.savefig(save_path_modified, dpi=300, bbox_inches='tight')
+        else:
+            plt.show()
     
     def analyze_average_influence(self, save_path=None):
         """
         分析平均影响因子
         """
+        if not self.avg_influence.any():
+            print("没有找到平均影响因子行，跳过此分析。")
+            return None
+
         print("\n=== 平均影响因子分析 ===")
         
         # 基本统计
@@ -163,9 +174,9 @@ class InfluenceMatrixAnalyzer:
         # 可视化平均影响因子
         plt.figure(figsize=(12, 6))
         plt.bar(range(len(self.avg_influence)), self.avg_influence)
-        plt.xlabel('训练集聚类索引')
-        plt.ylabel('平均影响力值')
-        plt.title('各训练集聚类对整体验证集的平均影响力')
+        plt.xlabel('Train Set Cluster Index')
+        plt.ylabel('Average Influence Value')
+        plt.title('Average Influence of Each Train Set Cluster on the Entire Validation Set')
         plt.xticks(range(len(self.train_labels)), self.train_labels, rotation=45, ha='right')
         plt.tight_layout()
         if save_path:
@@ -196,24 +207,21 @@ class InfluenceMatrixAnalyzer:
             # 域名是标签中'_c'之前的部分
             return label.split('_c')[0]
 
-        domain_map = {i: get_domain_from_label(label) for i, label in enumerate(val_labels_to_use)}
+        val_domain_map = {i: get_domain_from_label(label) for i, label in enumerate(val_labels_to_use)}
         train_domain_map = {i: get_domain_from_label(label) for i, label in enumerate(self.train_labels)}
         
         # 计算跨域影响
-        unique_domains = sorted(list(set(train_domain_map.values())))
-        if not use_clusters_only and 'avg' in set(domain_map.values()):
-            val_domains = sorted(list(set(domain_map.values())))
-        else:
-            val_domains = unique_domains
+        val_domains = sorted(list(set(val_domain_map.values())))
+        train_domains = sorted(list(set(train_domain_map.values())))
             
         cross_domain_influence = {}
         
         for val_domain in val_domains:
-            for train_domain in unique_domains:
+            for train_domain in train_domains:
                 if val_domain == 'avg':
                     continue
                     
-                val_indices = [i for i, d in domain_map.items() if d == val_domain]
+                val_indices = [i for i, d in val_domain_map.items() if d == val_domain]
                 train_indices = [i for i, d in train_domain_map.items() if d == train_domain]
                 
                 if val_indices and train_indices:
@@ -227,38 +235,39 @@ class InfluenceMatrixAnalyzer:
             print(f"{key}: {value:.6e}")
         
         # 创建跨域影响力矩阵可视化
-        self._visualize_cross_domain(cross_domain_influence, unique_domains, save_path)
+        self._visualize_cross_domain(cross_domain_influence, val_domains, train_domains, save_path)
         
         return cross_domain_influence
     
-    def _visualize_cross_domain(self, cross_domain_influence, domains, save_path=None):
+    def _visualize_cross_domain(self, cross_domain_influence, val_domains, train_domains, save_path=None):
         """
         可视化跨域影响力
         """
         # 过滤掉avg域（如果存在）
-        plot_domains = [d for d in domains if d != 'avg']
+        plot_val_domains = [d for d in val_domains if d != 'avg']
+        plot_train_domains = [d for d in train_domains if d != 'avg']
         
         # 创建跨域影响力矩阵
-        cross_matrix = np.zeros((len(plot_domains), len(plot_domains)))
-        for i, val_domain in enumerate(plot_domains):
-            for j, train_domain in enumerate(plot_domains):
+        cross_matrix = np.zeros((len(plot_val_domains), len(plot_train_domains)))
+        for i, val_domain in enumerate(plot_val_domains):
+            for j, train_domain in enumerate(plot_train_domains):
                 key = f"{train_domain} -> {val_domain}"
                 if key in cross_domain_influence:
                     cross_matrix[i, j] = cross_domain_influence[key]
         
         plt.figure(figsize=(10, 8))
         sns.heatmap(cross_matrix,
-                   xticklabels=[f"训练_{d}" for d in plot_domains],
-                   yticklabels=[f"验证_{d}" for d in plot_domains],
+                   xticklabels=[f"Train_{d}" for d in plot_train_domains],
+                   yticklabels=[f"Validation_{d}" for d in plot_val_domains],
                    annot=True,
                    fmt='.2e',
                    cmap='RdYlBu_r',
-                   square=True,
-                   cbar_kws={'label': '平均影响力值'})
+                   square=False, # 非方阵，所以设置为False
+                   cbar_kws={'label': 'Average Influence Value'})
         
-        plt.title('跨域影响力分析', fontsize=16, pad=20)
-        plt.xlabel('训练域', fontsize=12)
-        plt.ylabel('验证域', fontsize=12)
+        plt.title('Cross-Domain Influence Analysis', fontsize=16, pad=20)
+        plt.xlabel('Train Domain', fontsize=12)
+        plt.ylabel('Validation Domain', fontsize=12)
         plt.tight_layout()
         if save_path:
             plt.savefig(save_path, dpi=300, bbox_inches='tight')
@@ -339,17 +348,17 @@ class InfluenceMatrixAnalyzer:
         
         # 箱线图比较
         data_to_plot = [intra_influences, inter_influences]
-        ax1.boxplot(data_to_plot, labels=['聚类内', '聚类间'])
-        ax1.set_title('聚类内vs聚类间影响分布')
-        ax1.set_ylabel('影响力值')
+        ax1.boxplot(data_to_plot, labels=['Intra-Cluster', 'Inter-Cluster'])
+        ax1.set_title('Intra-Cluster vs Inter-Cluster Influence Distribution')
+        ax1.set_ylabel('Influence Value')
         ax1.grid(True, alpha=0.3)
         
         # 直方图比较
-        ax2.hist(intra_influences, alpha=0.7, label='聚类内', bins=20, density=True)
-        ax2.hist(inter_influences, alpha=0.7, label='聚类间', bins=20, density=True)
-        ax2.set_title('影响力值分布密度')
-        ax2.set_xlabel('影响力值')
-        ax2.set_ylabel('密度')
+        ax2.hist(intra_influences, alpha=0.7, label='Intra-Cluster', bins=20, density=True)
+        ax2.hist(inter_influences, alpha=0.7, label='Inter-Cluster', bins=20, density=True)
+        ax2.set_title('Influence Value Distribution Density')
+        ax2.set_xlabel('Influence Value')
+        ax2.set_ylabel('Density')
         ax2.legend()
         ax2.grid(True, alpha=0.3)
         
@@ -360,11 +369,13 @@ class InfluenceMatrixAnalyzer:
             plt.show()
     
     def compare_avg_vs_cluster_influence(self, save_path=None):
-        """
-        比较平均影响因子与聚类影响因子的差异
-        """
+        """比较平均影响因子与聚类影响因子的差异"""
         print("\n=== 平均影响因子 vs 聚类影响因子比较 ===")
         
+        if not self.avg_influence.size:
+            print("没有找到平均影响因子行，跳过此分析。")
+            return None
+
         # 计算每个训练聚类对所有验证聚类的平均影响
         cluster_avg_influence = np.mean(self.cluster_matrix, axis=0)
         
@@ -384,12 +395,12 @@ class InfluenceMatrixAnalyzer:
         x = np.arange(len(self.train_labels))
         width = 0.35
         
-        plt.bar(x - width/2, self.avg_influence, width, label='整体平均影响', alpha=0.8)
-        plt.bar(x + width/2, cluster_avg_influence, width, label='聚类平均影响', alpha=0.8)
+        plt.bar(x - width/2, self.avg_influence, width, label='Overall Average Influence', alpha=0.8)
+        plt.bar(x + width/2, cluster_avg_influence, width, label='Cluster Average Influence', alpha=0.8)
         
-        plt.xlabel('训练集聚类')
-        plt.ylabel('影响力值')
-        plt.title('整体平均影响 vs 聚类平均影响比较')
+        plt.xlabel('Train Set Clusters')
+        plt.ylabel('Influence Value')
+        plt.title('Overall Average Influence vs. Cluster Average Influence Comparison')
         plt.xticks(x, self.train_labels, rotation=45, ha='right')
         plt.legend()
         plt.tight_layout()
@@ -476,8 +487,10 @@ class InfluenceMatrixAnalyzer:
         
         # 2. 热力图（两个版本）
         print("\n2. 生成热力图...")
+        #如果有平均影响因子
         heatmap_path_with_avg = os.path.join(self.output_dir, 'heatmap_with_avg.png') 
         self.create_heatmap(save_path=heatmap_path_with_avg, include_avg=True)
+
         heatmap_path_clusters_only = os.path.join(self.output_dir, 'heatmap_clusters_only.png') 
         self.create_heatmap(save_path=heatmap_path_clusters_only, include_avg=False)
         
@@ -517,7 +530,7 @@ class InfluenceMatrixAnalyzer:
 # 使用示例
 if __name__ == "__main__":
     # 创建分析器实例
-    analyzer = InfluenceMatrixAnalyzer(csv_path='./TEST/influence/influence_outputs/Qwen2.5-0.5B-Instruct-long_short/influence_cluster.csv',output_dir='./TEST/influence/influence_outputs/Qwen2.5-0.5B-Instruct-long_short/influence_plot')
+    analyzer = InfluenceMatrixAnalyzer(csv_path='./TEST/influence/influence_outputs/Qwen2.5-0.5B-Instruct-long_short/influence.csv',output_dir='./TEST/influence/influence_outputs/Qwen2.5-0.5B-Instruct-long_short/influence_plot')
     
     # 生成完整分析报告
     analyzer.generate_report()

@@ -69,9 +69,9 @@ def merge_json_files(folder_path, output_file):
         return
 
 if __name__ == '__main__':
-    folder_path = '/home/xiexin/xx_help/LLaMA-Factory/data/open-r1/Mixture-of-Thoughts/mix_train_data/sharegpt'  # 文件夹路径
+    folder_path = './data/open-r1/Mixture-of-Thoughts/mix_train_data/sharegpt_4k_processed/train/science'  # 文件夹路径
     # 示例：输出为JSONL格式
-    output_file_jsonl = '/home/xiexin/xx_help/LLaMA-Factory/data/open-r1/Mixture-of-Thoughts/mix_train_data/sharegpt/all_domain_merged.jsonl'
+    output_file_jsonl = './data/open-r1/Mixture-of-Thoughts/mix_train_data/sharegpt_4k_processed/train/science/all_domain_merged.jsonl'
     merge_json_files(folder_path, output_file_jsonl)
 
     # # 示例：输出为JSON格式 (保持原有逻辑)

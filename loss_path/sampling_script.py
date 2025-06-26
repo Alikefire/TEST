@@ -189,9 +189,9 @@ def sample_and_split_data(base_data_path, output_base_path):
 
 if __name__ == '__main__':
     # IMPORTANT: Replace these paths with your actual directory paths
-    input_split_data_directory = './data/open-r1/Mixture-of-Thoughts/mix_train_data/instruct_4k'
+    input_split_data_directory = './data/open-r1/Mixture-of-Thoughts/mix_train_data/sharegpt_4k'
     # This will create separate train, validation, and evaluation directories
-    output_directory = './data/open-r1/Mixture-of-Thoughts/mix_train_data/instruct_4k_processed'
+    output_directory = './data/open-r1/Mixture-of-Thoughts/mix_train_data/sharegpt_4k_processed'
     
     sample_and_split_data(input_split_data_directory, output_directory)
     print("Data sampling and splitting process finished.")

@@ -1,12 +1,12 @@
-full_data_path: ./data/simplescaling/s1K-1.1/data/train.json, ./data/VLyb/s1K-mix/s1_brief_cot.json, ./data/N8Programs/gsm8k-r1/train.jsonl, ./data/N8Programs/gsm8k-gpt4o/train.json
-model_name_or_path: ./Model/OriginalModel/Qwen/Qwen2.5-0.5B-Instruct  # path to pretrained foundation llm
+full_data_path: ./data/open-r1/Mixture-of-Thoughts/mix_train_data/instruct_4k_processed/train/code/all_domain_merged.jsonl, ./data/open-r1/Mixture-of-Thoughts/mix_train_data/instruct_4k_processed/train/math/all_domain_merged.jsonl, ./data/open-r1/Mixture-of-Thoughts/mix_train_data/instruct_4k_processed/train/science/all_domain_merged.jsonl
+model_name_or_path: ./Model/OriginalModel/Qwen/Qwen2.5-0.5B-Instruct   # path to pretrained foundation llm
 cache_dir: data/huggingface_models
-model_max_length: 25000
+model_max_length: 32768
 schedule_name: Full
-result_dir_name: ./Model/MergeModel/DeepSeek-R1-Distill-Qwen-0.5B-long_short-sft-more_ckpt #checkpoint所在目录
+result_dir_name: ./Model/MergeModel/Qwen2.5-0.5B-Instruc-Mot_mix-sft-4k #checkpoint所在目录
 train_args:
   optim: adamw_torch
-  num_train_epochs: 3
+  num_train_epochs: 1
   per_device_train_batch_size: 1
   per_device_eval_batch_size: 1
   gradient_accumulation_steps: 16
@@ -18,7 +18,7 @@ train_args:
   weight_decay: 0.
   warmup_ratio: 0.03
   lr_scheduler_type: cosine
-  logging_steps: 1
+  logging_steps: 10
   fsdp: "full_shard auto_wrap" 
   fp16: true
   full_determinism: TRUE
