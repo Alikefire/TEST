@@ -135,7 +135,7 @@ def loss(data, model, rank, world_size, tokenizer=None):
     else:
         return losses # In single GPU mode, just return the losses directly
 
-def main(model_path, config_file=None, ckpt=-1, data_format="alpaca"):
+def main(model_path, config_file=None, ckpt=-1, data_format="alpaca", preprocess_numworkers=1):
     # Initialize distributed environment
     rank = 0
     world_size = 1
@@ -237,7 +237,7 @@ def main(model_path, config_file=None, ckpt=-1, data_format="alpaca"):
         actual_data_paths_list = [path.strip() for path in full_data_path_str.split(',')]
     else:
         actual_data_paths_list = []
-    all_data = make_supervised_data_module(tokenizer=tokenizer, data_path=actual_data_paths_list, data_format=data_format)
+    all_data = make_supervised_data_module(tokenizer=tokenizer, data_path=actual_data_paths_list, data_format=data_format, preprocess_numworkers=preprocess_numworkers)
 
     mean_entropies_all = loss(data=all_data, model=model, rank=rank, world_size=world_size, tokenizer=tokenizer)
     # Ensure all processes are done before saving and destroying group
@@ -261,6 +261,7 @@ if __name__ == '__main__':
                         help='Either local model directory (with config) or HuggingFace model path')
     parser.add_argument('--ckpt', type=int, default=-1,)
     parser.add_argument('--data_format', type=str, default="alpaca",help='读取的数据格式包含MathInstructh、alpaca、sharegpt,可以为列表或者字符串')
+    parser.add_argument('--preprocess_numworkers', type=int, default=8 ,help='Accelerate data preprocess when processes huge dataset')
     args = parser.parse_args()
     
-    main(model_path=args.model_path, config_file=args.config_file, ckpt=args.ckpt, data_format=args.data_format)
+    main(model_path=args.model_path, config_file=args.config_file, ckpt=args.ckpt, data_format=args.data_format, preprocess_numworkers=args.preprocess_numworkers)

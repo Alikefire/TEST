@@ -6,6 +6,7 @@ from typing import Union, Dict, Sequence
 import io
 import copy
 import json
+import multiprocessing
 import torch
 from torch.utils.data import Dataset
 import transformers
@@ -183,14 +184,31 @@ def _tokenize_fn(strings: Sequence[str], tokenizer: transformers.PreTrainedToken
         labels_lens=labels_lens,
     )
 
+# 定义一个辅助函数，用于单个字符串的 tokenization
+def tokenize_single(strings, tok):
+    return _tokenize_fn(strings, tok)
+
 def preprocess(
     sources: Sequence[str],
     targets: Sequence[str],
     tokenizer: transformers.PreTrainedTokenizer,
+    num_workers: int = 0,  # 新增参数，默认为0（不使用多进程）
 ) -> Dict:
     """Preprocess the data by tokenizing."""
     examples = [s + t for s, t in zip(sources, targets)]
-    examples_tokenized, sources_tokenized = [_tokenize_fn(strings, tokenizer) for strings in (examples, sources)]
+
+    if num_workers > 0:
+        # 使用 multiprocessing.Pool 并行处理
+        with multiprocessing.Pool(num_workers) as pool:
+            # 为 examples 和 sources 分别并行 tokenization
+            examples_tokenized = pool.starmap(tokenize_single, [(examples, tokenizer)])
+            sources_tokenized = pool.starmap(tokenize_single, [(sources, tokenizer)])
+        examples_tokenized = examples_tokenized[0]
+        sources_tokenized = sources_tokenized[0]
+    else:
+        # 原有顺序处理
+        examples_tokenized, sources_tokenized = [_tokenize_fn(strings, tokenizer) for strings in (examples, sources)]
+
     input_ids = examples_tokenized["input_ids"]
     labels = copy.deepcopy(input_ids)
     for label, source_len in zip(labels, sources_tokenized["input_ids_lens"]):
@@ -201,7 +219,7 @@ def preprocess(
 ## DATASETS / DATALOADER
 class SupervisedDataset(Dataset):
     """Dataset for sft."""
-    def __init__(self, data_path: Union[str, list[str]], tokenizer: transformers.PreTrainedTokenizer, data_format: Union[str, list[str]] = "MathInstruct"):
+    def __init__(self, data_path: Union[str, list[str]], tokenizer: transformers.PreTrainedTokenizer, data_format: Union[str, list[str]] = "MathInstruct", preprocess_numworkers=1):
         super(SupervisedDataset, self).__init__()
         logging.warning(f"Loading data with format: {data_format}...")
         
@@ -418,7 +436,7 @@ class SupervisedDataset(Dataset):
             return
 
         logging.warning("Tokenizing inputs... This may take some time...")
-        data_dict = preprocess(sources, targets, tokenizer)
+        data_dict = preprocess(sources, targets, tokenizer, num_workers=preprocess_numworkers)
         self.input_ids = data_dict["input_ids"]
         self.labels = data_dict["labels"]
 
@@ -450,9 +468,9 @@ class DataCollatorForSupervisedDataset(object):
             attention_mask=input_ids.ne(self.tokenizer.pad_token_id),
         )
 
-def make_supervised_data_module(tokenizer: transformers.PreTrainedTokenizer, data_path, data_format: Union[str, list[str]] = "MathInstruct") -> Dict:
+def make_supervised_data_module(tokenizer: transformers.PreTrainedTokenizer, data_path, data_format: Union[str, list[str]] = "MathInstruct", preprocess_numworkers=1) -> Dict:
     """Make dataset and collator for supervised fine-tuning."""
-    train_dataset = SupervisedDataset(tokenizer=tokenizer, data_path=data_path, data_format=data_format)
+    train_dataset = SupervisedDataset(tokenizer=tokenizer, data_path=data_path, data_format=data_format,preprocess_numworkers=preprocess_numworkers)
     data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer)
     return dict(train_dataset=train_dataset, eval_dataset=None, data_collator=data_collator)
 

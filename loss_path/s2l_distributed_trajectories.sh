@@ -6,17 +6,17 @@
 # --------------------------
 # 配置区（按需修改）
 # --------------------------
-YAML_CONFIG="./TEST/loss_path/configs/qwen2.5-0.5b_long-short_checkpoint.yml"  # 配置文件路径
+YAML_CONFIG="./TEST/loss_path/configs/qwen3-0.6B-Mot.yml"  # 配置文件路径
 LOG_DIR="logs"                        # 日志存放目录
 TIMESTAMP=$(date "+%Y%m%d-%H%M%S")    # 时间戳格式
 LOG_FILE="${LOG_DIR}/s2l_train_${TIMESTAMP}.log"
 # WANDB_KEY="be3827dada95edbcf0fb39f0578c548340baf3f5"
-MODEL_PATH="/home/xiexin/xx_help/LLaMA-Factory/Model/MergeModel/Qwen2.5-0.5B-Instruc-Mot_mix-sft-4k"
+MODEL_PATH="./Model/MergeModel/Qwen3-0.6B-Mot_mixed-sft-194.4k"
 #需要修改model_path为check所在目录
 # --------------------------
 # 环境变量配置
 # --------------------------
-export CUDA_VISIBLE_DEVICES=0,1,3,7      # 指定使用GPU 
+export CUDA_VISIBLE_DEVICES=0,1      # 指定使用GPU 
 export NCCL_P2P_DISABLE=1             # 禁用NCCL P2P通信
 export NCCL_IB_DISABLE=1              # 禁用NCCL InfiniBand
 export FORCE_TORCHRUN=1               #强制使用 torchrun 而不是 torch.distributed.launch
@@ -52,7 +52,7 @@ echo "📅 开始时间: $(date)"
 python TEST/loss_path/run_distributed_trajectories.py \
     --model_path ${MODEL_PATH} \
     --config_file  ${YAML_CONFIG} \
-    --checkpoints all
+    --checkpoints 900:4500:900
 
 # --------------------------
 # 结果检查
